@@ -43,7 +43,7 @@ youtubeSound.addEventListener("click", async ()=>{
 
     chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        function: setVolume,
+        function: setVolumePop,
     });
 });
 
@@ -52,7 +52,7 @@ function getChannelName(){
   return channel;
 }
 
-async function setVolume() {
+async function setVolumePop() {
   var volume = document.getElementsByTagName('video')[0].volume;
 console.log(volume);
 if(volume != 0.25){

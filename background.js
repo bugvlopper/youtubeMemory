@@ -22,10 +22,10 @@ URGENT !!!! je dois crée un git et réorganiser mon code pour location
 
 */
 chrome.runtime.onMessage.addListener(
-	async function(request, sender, sendResponse) {
+	function(request, sender, sendResponse) {
     if(request.getVolume){
-      var volumeToRespond =  teste[request.getVolume.channel]
-      sendResponse('volume response');
+      var volumeToRespond =  teste[request.getVolume.channel].volume;
+      sendResponse(volumeToRespond);
     }
 
     if(request.setChannel){
@@ -34,21 +34,24 @@ chrome.runtime.onMessage.addListener(
       } else {
         console.log('already set or null');
       }
-      sendResponse('setChannel response');
     }
-   
 
-	  console.log('2',teste);
-    console.log('1',request);
-    
+    if(request.setVolume){
+       var channel = request.setVolume.channel
+      teste[channel].volume = request.setVolume.volume;
+      chrome.storage.sync.set({ youtube: teste });
+      console.log(teste, teste[channel]);
+    }
 	}
   );
+  
+chrome.storage.onChanged.addListener(function(result){
+  console.log("storage change", result)
+})
 
 chrome.tabs.onActivated.addListener(async function (changeInfo){
   
-  chrome.storage.onChanged.addListener(function(result){
-	  console.log("storage change", result)
-  })
+  
   
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   
@@ -89,7 +92,6 @@ function base(tab){
 }
 
 function getChannelName(){
-
   var channel;
   var set = false;
   var target = document.body;
@@ -110,80 +112,71 @@ function getChannelName(){
         }
     })
   }           
-  /* return channel */
 };
 
 function setVolume() {
+  var volume = '0.25';
 	var video = document.getElementsByTagName('video')[0];
-  console.log(video.volume);
-  if(video.volume != 0.25){
-    document.getElementsByTagName('video')[0].volume = 0.25;
+  if(video.volume != volume){
+    document.getElementsByTagName('video')[0].volume = '0.25';
     document.getElementsByClassName('ytp-volume-slider-handle')[0].style.left = '10px';
-    console.log('set volume');
   }
   var volumeArea = document.getElementsByClassName('ytp-volume-area')[0];
   volumeArea.addEventListener('mouseover', remove);
   video.addEventListener('volumechange', setVol);
-  volumeArea.addEventListener('click', messageSetVolume);
+  volumeArea.addEventListener('mouseup', messageSetVolume);
 
   getChannelVolume(); 
 
 
   function remove() {
-	console.log('mouseover');
-	  console.log('click position vol = ' + document.getElementsByClassName('ytp-volume-slider-handle')[0].style.left);
 	  video.removeEventListener('volumechange', setVol,false); 
 	  volumeArea.removeEventListener('mouseover', remove,false);
   }
+
   function setVol(){
-    console.log(document.getElementsByTagName('video')[0].volume); 
-    document.getElementsByTagName('video')[0].volume = 0.25;
-    document.getElementsByClassName('ytp-volume-slider-handle')[0].style.left = '10px';
+    var slideSize = volume * 100 * 0.4;
+    document.getElementsByTagName('video')[0].volume = volume;
+    document.getElementsByClassName('ytp-volume-slider-handle')[0].style.left = slideSize+'px';
   }
 
   //a finir
   function messageSetVolume(){
     var channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
-    console.log(channelName);
     volume = video.volume;
-    var newSettings = {"channel": channelName
-      ,"volume": volume}
-    console.log(newSettings);
-    chrome.runtime.sendMessage(newSettings);
-    
+    var newSettings = {"setVolume":{"channel": channelName
+      ,"volume": volume}}
+    chrome.runtime.sendMessage(newSettings);  
   }
 
-  async function getChannelVolume(){
+  function getChannelVolume(){
     var channelName;
     var set = false;
-  var target = document.body;
-  var observer = new MutationObserver(onMutate);
-  observer.observe(target , { childList: true, subtree: true});
-  function onMutate(mutationsList) {
-    mutationsList.forEach(mutation => {
-        if(set == false){
-          if(document.getElementById("channel-name").getElementsByTagName('a')[0].innerText) {
-          observer.disconnect();
-          channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
-            set = true;
-            var chanToGet = {"getVolume": {"channel": channelName}}
-    chrome.runtime.sendMessage(chanToGet,function(response){
-      console.log(response);
-    });
-            }
-          
-        }
-    })
-  }
-
-    
+    var target = document.body;
+    var observer = new MutationObserver(onMutate);
+    observer.observe(target , { childList: true, subtree: true});
+    function onMutate(mutationsList) {
+      mutationsList.forEach(mutation => {
+          if(set == false){
+            if(document.getElementById("channel-name").getElementsByTagName('a')[0].innerText) {
+              observer.disconnect();
+              channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
+              set = true;
+              var chanToGet = {"getVolume": {"channel": channelName}}
+              chrome.runtime.sendMessage(chanToGet,function(response){
+                volume = response;
+              });
+            } 
+          }
+      })
+    }
   }
 };
 
 function setChannel(teste, channel){
   console.log("before persist",teste);
-  teste[channel] = {volume: '0.25',
-					playbackRate: '1'};
+  teste[channel] = {"volume": '0.25',
+					"playbackRate": '1'};
   chrome.storage.sync.set({ youtube: teste });
 };
 
