@@ -1,8 +1,6 @@
-let color = '#333333';
 const youtube = {};
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({ color, youtube });
-  console.log('Default background color set to %cgreen', `color: ${color}`);
+  chrome.storage.sync.set({ youtube });
 });
 
 var teste = {};
@@ -61,8 +59,6 @@ chrome.storage.onChanged.addListener(function(result){
 
 chrome.tabs.onActivated.addListener(async function (changeInfo){
   
-  
-  
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   
   if(tab.url.match(/https:\/\/www\.youtube\.com\/.+/)){
@@ -71,7 +67,6 @@ chrome.tabs.onActivated.addListener(async function (changeInfo){
     
   }
 
-  
 });
 
 chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab){
@@ -120,7 +115,6 @@ function getChannelName(){
             set = true;
             newSettings = {"setChannel":{"channel": channel}}
             chrome.runtime.sendMessage(newSettings,function(response){
-              console.log(response);
             });
           }
         }
