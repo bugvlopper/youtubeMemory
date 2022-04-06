@@ -1,0 +1,52 @@
+*{
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+body{
+    background-color: #333333;
+    color: #fff;
+    height: 200px;
+    
+    font-size: 1rem;
+}
+#container{
+    margin: 10px;
+}
+.flex{
+    display: flex;
+}
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+  margin: 0; 
+}
+input{
+    width: 30px;
+    background-color: #555555;
+    border: 1px solid #444444;
+    margin-left: 3px;
+    color: #fff;
+}
+select{
+    color: #fff;
+    background-color: #555555;
+    border: 1px solid #444444;
+
+}
+#button{
+    padding: 5px 20px;
+    border-radius: 15px;
+    background-color: #555555;
+    color: #fff;
+    font-weight: 400;
+}
+#button:hover{
+    cursor: pointer;
+}
+.saveMessage{
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+}
+

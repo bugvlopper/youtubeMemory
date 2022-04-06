@@ -5,10 +5,10 @@ async function pop() {
 
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  if(tab.url.match(/https:\/\/www\.youtube\.com\/.+/)){
+  if(tab.url.match(/https:\/\/www\.youtube\.com\/watch.+/)){
     
     chrome.storage.sync.get("youtube", ( you ) => {
-      youtubeDataBase = you
+      Object.assign(youtubeDataBase = you)
     });
 
     chrome.scripting.executeScript({
@@ -33,7 +33,7 @@ async function pop() {
         document.getElementById("channelName").getElementsByTagName('p')[0].innerHTML = chanName;
         console.log(youtubeDataBase);
         var nodevolume = document.createElement('p')
-        nodevolume.innerHTML = youtubeDataBase.youtube[chanName].volume;
+        nodevolume.innerHTML = youtubeDataBase.youtube[chanName].volume * 100 + '%';
         document.getElementById("channelVolume").appendChild(nodevolume);
         var nodePlayback = document.createElement('p')
         nodePlayback.innerHTML = youtubeDataBase.youtube[chanName].playbackRate;
@@ -45,3 +45,11 @@ async function pop() {
     document.body.innerHTML = "Merci d'ouvrir une page youtube."
   }
 }
+
+document.getElementById('options').addEventListener('click',()=>{
+  if (chrome.runtime.openOptionsPage) {
+    chrome.runtime.openOptionsPage();
+  } else {
+    window.open(chrome.runtime.getURL('options.html'));
+  }
+})

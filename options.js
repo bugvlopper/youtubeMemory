@@ -1,46 +1,63 @@
-let page = document.getElementById("buttonDiv");
-let selectedClassName = "current";
-const presetButtonColors = ["#3aa757", "#e8453c", "#f9bb2d", "#333333"];
+var vol;
+var playback;
+chrome.storage.sync.get(["volumeInStore","playbackRateInStore"],({ volumeInStore, playbackRateInStore })=>{
+    vol = volumeInStore;
+    playback = playbackRateInStore;
+    console.log(volumeInStore);
+    console.log(vol);
+    inputLimiteur()
+    noName()
+})
 
-// Reacts to a button click by marking the selected button and saving
-// the selection
-function handleButtonClick(event) {
-  // Remove styling from the previously selected color
-  let current = event.target.parentElement.querySelector(
-    `.${selectedClassName}`
-  );
-  if (current && current !== event.target) {
-    current.classList.remove(selectedClassName);
-  }
-
-  // Mark the button as selected
-  let color = event.target.dataset.color;
-  event.target.classList.add(selectedClassName);
-  chrome.storage.sync.set({ color });
+function inputLimiteur(){
+    document.getElementById('inputVolume').addEventListener("keyup",(l)=>{
+        var value = l.target.value;
+        if (value != "") {
+            if (value < 1) {
+            document.getElementById('inputVolume').value = 1;
+            }
+            if (value > 100) {
+                document.getElementById('inputVolume').value = 100;
+            }
+        }
+        console.log("teste");
+        console.log(l.target.value);
+    })
+    document.getElementById('inputVolume').addEventListener("blur",(l)=>{
+        var value = l.target.value;
+        if (value == "") {
+            document.getElementById('inputVolume').value = vol * 100;   
+        }
+        console.log("blur");
+        console.log(l.target.value);
+    })
+    document.getElementById('inputSpeed').value
 }
 
-// Add a button to the page for each supplied color
-function constructOptions(buttonColors) {
-  chrome.storage.sync.get("color", (data) => {
-    let currentColor = data.color;
-    // For each color we were provided…
-    for (let buttonColor of buttonColors) {
-      // …create a button with that color…
-      let button = document.createElement("button");
-      button.dataset.color = buttonColor;
-      button.style.backgroundColor = buttonColor;
+function noName(){
+   document.getElementById('inputVolume').value = vol *  100;
+   document.getElementById('inputSpeed').value = playback;
 
-      // …mark the currently selected color…
-      if (buttonColor === currentColor) {
-        button.classList.add(selectedClassName);
-      }
+document.getElementById('button').addEventListener('click',()=>{
+    
+    inputVolume = document.getElementById('inputVolume').value / 100;
+    inputSpeed = document.getElementById('inputSpeed').value;
+    console.log(inputVolume);
+    console.log(inputSpeed);
+    var container = document.getElementById("container");
+    container.setAttribute('style', "display: none")
+    var body = document.body ;
+    var saveMessage = document.createElement('p');
+    saveMessage.setAttribute('id', 'saveMessage');
+    saveMessage.setAttribute('class', 'saveMessage');
+    saveMessage.innerHTML = "New settings save.";
+    body.appendChild(saveMessage);
+    setTimeout(()=>{
+        document.getElementById('saveMessage').remove();
+        container.removeAttribute('style', 'display: none')
 
-      // …and register a listener for when that button is clicked
-      button.addEventListener("click", handleButtonClick);
-      page.appendChild(button);
-    }
-  });
+    }, 2000)
+    chrome.storage.sync.set({ volumeInStore: inputVolume, playbackRateInStore: inputSpeed});
+}) 
 }
 
-// Initialize the page by constructing the color options
-constructOptions(presetButtonColors);

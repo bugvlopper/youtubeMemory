@@ -1,14 +1,33 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" href="button.css">
+    <link rel="stylesheet" href="options.css">
   </head>
   <body>
-    <div id="buttonDiv">
+    <div id="container">
+      <div id="volume" class="flex">
+        <p>Default volume:</p>
+        <input type="number" id="inputVolume">
+        <p>%</p>
+      </div>
+      <div id="speed" class="flex">
+        <p>Default speed:</p>
+        <select id="inputSpeed">
+          <option value="0.25">0.25</option>
+          <option value="0.5">0.5</option>
+          <option value="0.75">0.75</option>
+          <option value="1">1</option>
+          <option value="1.25">1.25</option>
+          <option value="1.5">1.5</option>
+          <option value="1.75">1.75</option>
+          <option value="2">2</option>
+        </select>
+      </div>
+      <div id="saveButton">
+        <button type="button" id="button">Save</button>
+      </div>
     </div>
-    <div>
-      <p>Choose a different background color!</p>
-    </div>
+    
   </body>
   <script src="options.js"></script>
 </html>

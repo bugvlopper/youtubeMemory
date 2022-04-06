@@ -1,24 +1,17 @@
-const youtube = {};
+
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({ youtube });
+const youtube = {};
+var volumeInStore = 0.25;
+var playbackRateInStore = 1;
+  chrome.storage.sync.set({ youtube, volumeInStore, playbackRateInStore });
 });
 
 var teste = {};
 
-chrome.storage.sync.get("youtube", ({ youtube }) => {
+chrome.storage.sync.get(['youtube'], ({ youtube }) => {
 	teste = youtube;
-}); 
-/* 
+});
 
-j'ai reussi a obtenir le titre des chaine youtube grace au mutation observer 
-il me faut encore dev le partis pour modifier le volume en "BDD" Fait
-j'ai une reponse pour l'ajout de nouvelle chaine (toujour a verfier) la reponse a été retirer car inutile pour le client
-j'ai une reponse pour obtenir le volume en BDD pour les volumes modifier / Fait
-il me faudra faire les communication pour les playbackRate(vitesse de lecture)
-
-URGENT !!!! je dois crée un git et réorganiser mon code pour location / Fait
-
-*/
 chrome.runtime.onMessage.addListener(
 	function(request, sender, sendResponse) {
   
@@ -58,40 +51,36 @@ chrome.storage.onChanged.addListener(function(result){
 })
 
 chrome.tabs.onActivated.addListener(async function (changeInfo){
-  
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   
   if(tab.url.match(/https:\/\/www\.youtube\.com\/.+/)){
-
-   base(tab);
-    
+    base(tab);
   }
-
 });
 
 chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab){
 	  if(tab.url.match(/https:\/\/www\.youtube\.com\/.+/)){
       var complete = await changeInfo.status ==='complete';
-      console.log(complete)
       if(complete === true){
         
         base(tab);
-        
-        chrome.scripting.executeScript({
-          target: { tabId : tab.id },
-          function: setVolume,
-        });
-        chrome.scripting.executeScript({
-          target: { tabId : tab.id },
-          function: setPlaybackRate,
-        });
-
+        chrome.storage.sync.get(["volumeInStore","playbackRateInStore"], ({ volumeInStore, playbackRateInStore }) => {
+          console.log(volumeInStore);
+          console.log(playbackRateInStore);
+          chrome.scripting.executeScript({
+            target: { tabId : tab.id },
+            function: setVolume,
+            args: [volumeInStore],
+          });
+          chrome.scripting.executeScript({
+            target: { tabId : tab.id },
+            function: setPlaybackRate,
+            args: [playbackRateInStore],
+          });
+        });  
       }
-	  }
-    
-    
+	  } 
 });
-
 
 function base(tab){
 	chrome.scripting.executeScript({
@@ -122,11 +111,12 @@ function getChannelName(){
   }           
 };
 
-function setVolume() {
-  var volume = '0.25';
+function setVolume(vol) {
+  var volume = parseFloat(vol);
+  console.log('teste de la mortt', volume);
 	var video = document.getElementsByTagName('video')[0];
   if(video.volume != volume){
-    document.getElementsByTagName('video')[0].volume = '0.25';
+    document.getElementsByTagName('video')[0].volume = volume;
     document.getElementsByClassName('ytp-volume-slider-handle')[0].style.left = '10px';
   }
   var volumeArea = document.getElementsByClassName('ytp-volume-area')[0];
@@ -135,7 +125,6 @@ function setVolume() {
   volumeArea.addEventListener('mouseup', messageSetVolume);
 
   getChannelVolume(); 
-
 
   function remove() {
 	  video.removeEventListener('volumechange', setVol,false); 
@@ -148,7 +137,6 @@ function setVolume() {
     document.getElementsByClassName('ytp-volume-slider-handle')[0].style.left = slideSize+'px';
   }
 
-  //a finir
   function messageSetVolume(){
     var channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
     volume = video.volume;
@@ -182,21 +170,23 @@ function setVolume() {
 };
 
 function setChannel(teste, channel){
-  console.log("before persist",teste);
-  teste[channel] = {"volume": '0.25',
-					"playbackRate": '1'};
-  chrome.storage.sync.set({ youtube: teste });
+  chrome.storage.sync.get(['volumeInStore', 'playbackRateInStore'] ,(tab)=>{
+    console.log("before persist",teste);
+    teste[channel] = {"volume": tab.volumeInStore,
+            "playbackRate": tab.playbackRateInStore};
+    chrome.storage.sync.set({ youtube: teste });
+  });
 };
 
-function setPlaybackRate() {
+function setPlaybackRate(pbr) {
   var video = document.getElementsByTagName('video')[0];
   var playbackPanel = document.getElementsByClassName('ytp-panel-menu')[0]/* .firstChild.getElementsByClassName('ytp-menuitem-content')[0]; */
-  var playbackRate = 1;
+  var playbackRate = pbr;
+  console.log('teste de la morts 222');
   video.playbackRate = playbackRate;
   video.addEventListener('ratechange',messageSetPlaybackRate);
   playbackPanel.addEventListener('click', ()=>{console.log(playbackPanel)});
   getChannelPlaybackRate();
-
 
   function messageSetPlaybackRate(){
     var channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
@@ -248,19 +238,25 @@ function setPlaybackRate() {
                     setPlaybackRateHtml(7);
                   break;
                 }
-
               });
             } 
           }
       })
     }
 
-function setPlaybackRateHtml(childNumber){
-  document.getElementsByClassName('ytp-settings-button')[0].click();
-  document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].firstChild.firstChild.firstChild.click();
-  document.getElementsByClassName('ytp-panel ytp-panel-animate-forward')[0].lastChild.children[childNumber].click();
-  document.getElementsByClassName('ytp-settings-button')[0].click(); 
-}
+    function setPlaybackRateHtml(childNumber){
+      document.getElementsByClassName('ytp-settings-button')[0].click();
+      var panel = document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].getElementsByClassName('ytp-menuitem-label')
+      for(var i = 0 ; i < panel.length; i++){
+        if(panel[i].innerHTML == "Vitesse de lecture"){
+            console.log(panel[i]);
+            panel[i].click();
+            break;
+        }
+      }
+      document.getElementsByClassName('ytp-panel ytp-panel-animate-forward')[0].lastChild.children[childNumber].click();
+      document.getElementsByClassName('ytp-settings-button')[0].click(); 
+    }
 
   };
 };
