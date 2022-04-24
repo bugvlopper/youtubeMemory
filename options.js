@@ -41,7 +41,7 @@ function noName(){
 document.getElementById('button').addEventListener('click',()=>{
     
     inputVolume = document.getElementById('inputVolume').value / 100;
-    inputSpeed = document.getElementById('inputSpeed').value;
+    inputSpeed = parseFloat(document.getElementById('inputSpeed').value);
     console.log(inputVolume);
     console.log(inputSpeed);
     var container = document.getElementById("container");

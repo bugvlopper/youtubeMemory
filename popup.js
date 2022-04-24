@@ -19,7 +19,7 @@ async function pop() {
     
     function getChannelName(){
         var channel = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
-        var avatar = document.getElementById('avatar').getElementsByTagName('img')[0].getAttribute("src");
+        var avatar = document.getElementsByTagName('ytd-video-owner-renderer')[0].getElementsByTagName('img')[0].getAttribute("src");
         var info = {'channel': channel,
                       'avatar': avatar}
         return info
@@ -31,9 +31,9 @@ async function pop() {
         document.getElementById('img').append(img);
         var chanName = name[0].result.channel
         document.getElementById("channelName").getElementsByTagName('p')[0].innerHTML = chanName;
-        console.log(youtubeDataBase);
         var nodevolume = document.createElement('p')
-        nodevolume.innerHTML = youtubeDataBase.youtube[chanName].volume * 100 + '%';
+        var volume = (youtubeDataBase.youtube[chanName].volume * 100).toFixed(0)
+        nodevolume.innerHTML = volume + '%';
         document.getElementById("channelVolume").appendChild(nodevolume);
         var nodePlayback = document.createElement('p')
         nodePlayback.innerHTML = youtubeDataBase.youtube[chanName].playbackRate;

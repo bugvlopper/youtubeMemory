@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener(
        var channel = request.setVolume.channel
       teste[channel].volume = request.setVolume.volume;
       chrome.storage.sync.set({ youtube: teste });
-      console.log(teste, teste[channel]);
+      console.log('SetVolume message receive',teste, teste[channel]);
     }
 
     if(request.getPlaybackRate){
@@ -42,6 +42,15 @@ chrome.runtime.onMessage.addListener(
       var channel = request.setPlaybackRate.channel
       teste[channel].playbackRate = request.setPlaybackRate.playbackRate;
       chrome.storage.sync.set({ youtube: teste });
+    }
+
+    if(request.chanIsSet){
+      var channel = request.channel
+      var isSet = false;
+      if(teste[channel]){
+        isSet = true;
+      }
+      sendResponse(isSet);
     }
 	}
   );
@@ -59,6 +68,7 @@ chrome.tabs.onActivated.addListener(async function (changeInfo){
 });
 
 chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab){
+  console.log('update tab');
 	  if(tab.url.match(/https:\/\/www\.youtube\.com\/.+/)){
       var complete = await changeInfo.status ==='complete';
       if(complete === true){
@@ -112,9 +122,9 @@ function getChannelName(){
 };
 
 function setVolume(vol) {
-  var volume = parseFloat(vol);
-  console.log('teste de la mortt', volume);
+  var volume = vol;
 	var video = document.getElementsByTagName('video')[0];
+  getChannelVolume();
   if(video.volume != volume){
     document.getElementsByTagName('video')[0].volume = volume;
     document.getElementsByClassName('ytp-volume-slider-handle')[0].style.left = '10px';
@@ -123,8 +133,9 @@ function setVolume(vol) {
   volumeArea.addEventListener('mouseover', remove);
   video.addEventListener('volumechange', setVol);
   volumeArea.addEventListener('mouseup', messageSetVolume);
+  newVideoSelectVolume()
 
-  getChannelVolume(); 
+   
 
   function remove() {
 	  video.removeEventListener('volumechange', setVol,false); 
@@ -133,16 +144,19 @@ function setVolume(vol) {
 
   function setVol(){
     var slideSize = volume * 100 * 0.4;
-    document.getElementsByTagName('video')[0].volume = volume;
+      if(volume !== undefined){
+        document.getElementsByTagName('video')[0].volume = volume;
+      }
+    
     document.getElementsByClassName('ytp-volume-slider-handle')[0].style.left = slideSize+'px';
   }
 
   function messageSetVolume(){
     var channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
-    volume = video.volume;
+    var newVolume = video.volume;
     var newSettings = {"setVolume":{"channel": channelName
-      ,"volume": volume}}
-    chrome.runtime.sendMessage(newSettings);  
+      ,"volume": newVolume.toFixed(2)}}
+    chrome.runtime.sendMessage(newSettings); 
   }
 
   function getChannelVolume(){
@@ -167,26 +181,67 @@ function setVolume(vol) {
       })
     }
   }
+
+
+  function newVideoSelectVolume(){
+    var target2 = document.getElementById("channel-name");
+    var observerNewSelect = new MutationObserver(onMutate);
+    observerNewSelect.observe(target2 , { childList: true, subtree: true});
+    function onMutate(mutationsList) {
+      mutationsList.forEach(mutation => {
+        if(document.getElementById("channel-name").getElementsByTagName('a')[0].innerText) {
+          channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
+          var chanIsSet = {"chanIsSet": {"channel": channelName}}
+          chrome.runtime.sendMessage(chanIsSet,function(response){
+            if (response === false) {
+              var chanToSet = {"setChannel": {"channel": channelName}}
+              chrome.runtime.sendMessage(chanToSet);
+            }
+          })
+            var chanToGet = {"getVolume": {"channel": channelName}}
+          chrome.runtime.sendMessage(chanToGet,function(response){
+            volume = response;
+            setVol()
+          });
+        }
+      })
+    }
+}
+
+
+
 };
+
 
 function setChannel(teste, channel){
   chrome.storage.sync.get(['volumeInStore', 'playbackRateInStore'] ,(tab)=>{
     console.log("before persist",teste);
-    teste[channel] = {"volume": tab.volumeInStore,
-            "playbackRate": tab.playbackRateInStore};
+    teste[channel] = {"volume": tab.volumeInStore.toFixed(2),
+            "playbackRate": tab.playbackRateInStore.toFixed(2)};
     chrome.storage.sync.set({ youtube: teste });
   });
 };
 
 function setPlaybackRate(pbr) {
+  console.log('setPlaybackRate pbr',pbr);
   var video = document.getElementsByTagName('video')[0];
-  var playbackPanel = document.getElementsByClassName('ytp-panel-menu')[0]/* .firstChild.getElementsByClassName('ytp-menuitem-content')[0]; */
   var playbackRate = pbr;
-  console.log('teste de la morts 222');
-  video.playbackRate = playbackRate;
-  video.addEventListener('ratechange',messageSetPlaybackRate);
-  playbackPanel.addEventListener('click', ()=>{console.log(playbackPanel)});
+  console.log('setPlaybackRate playbackrate',playbackRate);
+  if (playbackRate !== undefined) {
+    console.log('setPlaybackRate playbackrate 2',playbackRate);
+
+    video.playbackRate = playbackRate;
+  }
+ document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].addEventListener('click',eventListener)
   getChannelPlaybackRate();
+  newVideoSelectPlaybakeRate();
+
+
+  function eventListener(){
+     video.addEventListener('ratechange',messageSetPlaybackRate);   
+  }
+
+
 
   function messageSetPlaybackRate(){
     var channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
@@ -194,6 +249,7 @@ function setPlaybackRate(pbr) {
     var newSettings = {"setPlaybackRate":{"channel": channelName
       ,"playbackRate": playbackRate}}
     chrome.runtime.sendMessage(newSettings);  
+    video.removeEventListener('ratechange',messageSetPlaybackRate, false)
   }
 
   function getChannelPlaybackRate(){
@@ -243,22 +299,77 @@ function setPlaybackRate(pbr) {
           }
       })
     }
-
-    function setPlaybackRateHtml(childNumber){
-      document.getElementsByClassName('ytp-settings-button')[0].click();
-      var panel = document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].getElementsByClassName('ytp-menuitem-label')
-      for(var i = 0 ; i < panel.length; i++){
-        if(panel[i].innerHTML == "Vitesse de lecture"){
-            console.log(panel[i]);
-            panel[i].click();
-            break;
-        }
+  }
+  
+  function setPlaybackRateHtml(childNumber){
+    document.getElementsByClassName('ytp-settings-button')[0].click();
+    var panel = document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].getElementsByClassName('ytp-menuitem-label')
+    for(var i = 0 ; i < panel.length; i++){
+      if(panel[i].innerHTML == "Vitesse de lecture"){
+        var timeout1 = setTimeout(() => {
+          panel[i].click();
+        }, 100);  
+        break;
       }
-      document.getElementsByClassName('ytp-panel ytp-panel-animate-forward')[0].lastChild.children[childNumber].click();
-      document.getElementsByClassName('ytp-settings-button')[0].click(); 
     }
+    var timeout2 = setTimeout(() => {
+    document.getElementsByClassName('ytp-panel-menu')[0].children[childNumber].click();
+    }, 200);
+    
+    var timeout3 = setTimeout(() => {
+      document.getElementsByClassName('ytp-settings-button')[0].click();
+    }, 300);
+     
+  }
 
-  };
+  function newVideoSelectPlaybakeRate(){
+    var target2 = document.getElementById("channel-name");
+    var observerNewSelect = new MutationObserver(onMutate);
+    observerNewSelect.observe(target2 , { childList: true, subtree: true});
+    function onMutate(mutationsList) {
+      mutationsList.forEach(mutation => {
+
+        if(document.getElementById("channel-name").getElementsByTagName('a')[0].innerText) {
+          channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
+          var chanIsSet = {"chanIsSet": {"channel": channelName}}
+          chrome.runtime.sendMessage(chanIsSet,function(response){
+            if (response === false) {
+              var chanToSet = {"setChannel": {"channel": channelName}}
+              chrome.runtime.sendMessage(chanToSet);
+            }
+          })
+            var chanToGet = {"getPlaybackRate": {"channel": channelName}}
+          chrome.runtime.sendMessage(chanToGet,function(response){
+            document.getElementsByTagName('video')[0].playbackRate = response;
+            switch (response){
+                case 0.25:
+                  setPlaybackRateHtml(0);
+                break;
+                case 0.5:
+                  setPlaybackRateHtml(1);
+                break;
+                case 0.75:
+                  setPlaybackRateHtml(2);
+                break;
+                case 1:
+                  setPlaybackRateHtml(3);
+                break;
+                case 1.25:
+                  setPlaybackRateHtml(4);
+                break;
+                case 1.5:
+                  setPlaybackRateHtml(5);
+                break;
+                case 1.75:
+                  setPlaybackRateHtml(6);
+                break;
+                case 2:
+                  setPlaybackRateHtml(7);
+                break;
+              }
+          });
+        }
+      })
+    }
+  }
 };
-
-
