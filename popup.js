@@ -7,7 +7,7 @@ async function pop() {
 
   if(tab.url.match(/https:\/\/www\.youtube\.com\/watch.+/)){
     
-    chrome.storage.sync.get("youtube", ( you ) => {
+    chrome.storage.local.get("youtube", ( you ) => {
       Object.assign(youtubeDataBase = you)
     });
 

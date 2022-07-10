@@ -1,6 +1,6 @@
 var vol;
 var playback;
-chrome.storage.sync.get(["volumeInStore","playbackRateInStore"],({ volumeInStore, playbackRateInStore })=>{
+chrome.storage.local.get(["volumeInStore","playbackRateInStore"],({ volumeInStore, playbackRateInStore })=>{
     vol = volumeInStore;
     playback = playbackRateInStore;
     console.log(volumeInStore);
@@ -57,7 +57,7 @@ document.getElementById('button').addEventListener('click',()=>{
         container.removeAttribute('style', 'display: none')
 
     }, 2000)
-    chrome.storage.sync.set({ volumeInStore: inputVolume, playbackRateInStore: inputSpeed});
+    chrome.storage.local.set({ volumeInStore: inputVolume, playbackRateInStore: inputSpeed});
 }) 
 }
 

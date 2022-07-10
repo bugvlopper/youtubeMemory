@@ -3,12 +3,12 @@ chrome.runtime.onInstalled.addListener(() => {
 const youtube = {};
 var volumeInStore = 0.25;
 var playbackRateInStore = 1;
-  chrome.storage.sync.set({ youtube, volumeInStore, playbackRateInStore });
+  chrome.storage.local.set({ youtube, volumeInStore, playbackRateInStore });
 });
 
 var teste = {};
 
-chrome.storage.sync.get(['youtube'], ({ youtube }) => {
+chrome.storage.local.get(['youtube'], ({ youtube }) => {
 	teste = youtube;
 });
 
@@ -30,7 +30,7 @@ chrome.runtime.onMessage.addListener(
     if(request.setVolume){
        var channel = request.setVolume.channel
       teste[channel].volume = request.setVolume.volume;
-      chrome.storage.sync.set({ youtube: teste });
+      chrome.storage.local.set({ youtube: teste });
       console.log('SetVolume message receive',teste, teste[channel]);
     }
 
@@ -41,7 +41,7 @@ chrome.runtime.onMessage.addListener(
     if(request.setPlaybackRate){
       var channel = request.setPlaybackRate.channel
       teste[channel].playbackRate = request.setPlaybackRate.playbackRate;
-      chrome.storage.sync.set({ youtube: teste });
+      chrome.storage.local.set({ youtube: teste });
     }
 
     if(request.chanIsSet){
@@ -74,7 +74,7 @@ chrome.tabs.onUpdated.addListener(async function (tabId, changeInfo, tab){
       if(complete === true){
         
         base(tab);
-        chrome.storage.sync.get(["volumeInStore","playbackRateInStore"], ({ volumeInStore, playbackRateInStore }) => {
+        chrome.storage.local.get(["volumeInStore","playbackRateInStore"], ({ volumeInStore, playbackRateInStore }) => {
           console.log(volumeInStore);
           console.log(playbackRateInStore);
           chrome.scripting.executeScript({
@@ -214,11 +214,11 @@ function setVolume(vol) {
 
 
 function setChannel(teste, channel){
-  chrome.storage.sync.get(['volumeInStore', 'playbackRateInStore'] ,(tab)=>{
+  chrome.storage.local.get(['volumeInStore', 'playbackRateInStore'] ,(tab)=>{
     console.log("before persist",teste);
     teste[channel] = {"volume": tab.volumeInStore.toFixed(2),
             "playbackRate": tab.playbackRateInStore.toFixed(2)};
-    chrome.storage.sync.set({ youtube: teste });
+    chrome.storage.local.set({ youtube: teste });
   });
 };
 
@@ -234,7 +234,7 @@ function setPlaybackRate(pbr) {
   }
  document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].addEventListener('click',eventListener)
   getChannelPlaybackRate();
-  newVideoSelectPlaybakeRate();
+/*   newVideoSelectPlaybakeRate(); */
 
 
   function eventListener(){
@@ -306,19 +306,22 @@ function setPlaybackRate(pbr) {
     var panel = document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].getElementsByClassName('ytp-menuitem-label')
     for(var i = 0 ; i < panel.length; i++){
       if(panel[i].innerHTML == "Vitesse de lecture"){
-        var timeout1 = setTimeout(() => {
+        setTimeout(() => {
           panel[i].click();
-        }, 100);  
+          setTimeout(() => {
+            document.getElementsByClassName('ytp-panel-menu')[0].children[childNumber].click();
+            console.log(childNumber);
+            setTimeout(() => {
+              document.getElementsByClassName('ytp-settings-button')[0].click();
+            }, 1000);
+          }, 1000);
+        }, 1000);  
         break;
       }
     }
-    var timeout2 = setTimeout(() => {
-    document.getElementsByClassName('ytp-panel-menu')[0].children[childNumber].click();
-    }, 200);
     
-    var timeout3 = setTimeout(() => {
-      document.getElementsByClassName('ytp-settings-button')[0].click();
-    }, 300);
+    
+    
      
   }
 
