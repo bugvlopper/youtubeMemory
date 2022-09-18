@@ -190,7 +190,7 @@ function setVolume(vol) {
     function onMutate(mutationsList) {
       mutationsList.forEach(mutation => {
         if(document.getElementById("channel-name").getElementsByTagName('a')[0].innerText) {
-          channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
+          let channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
           var chanIsSet = {"chanIsSet": {"channel": channelName}}
           chrome.runtime.sendMessage(chanIsSet,function(response){
             if (response === false) {
@@ -206,7 +206,7 @@ function setVolume(vol) {
         }
       })
     }
-}
+  }
 
 
 
@@ -227,18 +227,19 @@ function setPlaybackRate(pbr) {
   var video = document.getElementsByTagName('video')[0];
   var playbackRate = pbr;
   console.log('setPlaybackRate playbackrate',playbackRate);
-  if (playbackRate !== undefined) {
+  if (playbackRate != undefined) {
     console.log('setPlaybackRate playbackrate 2',playbackRate);
 
     video.playbackRate = playbackRate;
   }
- document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].addEventListener('click',eventListener)
+  let eventlistener = document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].addEventListener('click',eventListener)
   getChannelPlaybackRate();
-/*   newVideoSelectPlaybakeRate(); */
-
+/*   newVideoSelectPlaybakeRate();
+ */
 
   function eventListener(){
-     video.addEventListener('ratechange',messageSetPlaybackRate);   
+     video.addEventListener('ratechange',messageSetPlaybackRate); 
+     removeEventListener("click", eventListener);  
   }
 
 
@@ -255,46 +256,51 @@ function setPlaybackRate(pbr) {
   function getChannelPlaybackRate(){
     var channelName;
     var set = false;
-    var target = document.body;
+    var target = document.getElementById("channel-name");
     var observer = new MutationObserver(onMutate);
     observer.observe(target , { childList: true, subtree: true});
     function onMutate(mutationsList) {
       mutationsList.forEach(mutation => {
           if(set == false){
             if(document.getElementById("channel-name").getElementsByTagName('a')[0].innerText) {
-              observer.disconnect();
+              /* observer.disconnect(); */
               channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
               set = true;
               var chanToGet = {"getPlaybackRate": {"channel": channelName}}
-              chrome.runtime.sendMessage(chanToGet,function(response){
-                video.playbackRate = response;
-                switch (response){
-                  case 0.25:
-                    setPlaybackRateHtml(0);
-                  break;
-                  case 0.5:
-                    setPlaybackRateHtml(1);
-                  break;
-                  case 0.75:
-                    setPlaybackRateHtml(2);
-                  break;
-                  case 1:
-                    setPlaybackRateHtml(3);
-                  break;
-                  case 1.25:
-                    setPlaybackRateHtml(4);
-                  break;
-                  case 1.5:
-                    setPlaybackRateHtml(5);
-                  break;
-                  case 1.75:
-                    setPlaybackRateHtml(6);
-                  break;
-                  case 2:
-                    setPlaybackRateHtml(7);
-                  break;
-                }
-              });
+              setTimeout(() => {
+                chrome.runtime.sendMessage(chanToGet,function(response){
+                  video.playbackRate = response;
+                 /*  switch (response){
+                    case 0.25:
+                      setPlaybackRateHtml(0);
+                    break;
+                    case 0.5:
+                      setPlaybackRateHtml(1);
+                    break;
+                    case 0.75:
+                      setPlaybackRateHtml(2);
+                    break;
+                    case 1:
+                      setPlaybackRateHtml(3);
+                    break;
+                    case 1.25:
+                      setPlaybackRateHtml(4);
+                    break;
+                    case 1.5:
+                      setPlaybackRateHtml(5);
+                    break;
+                    case 1.75:
+                      setPlaybackRateHtml(6);
+                    break;
+                    case 2:
+                      setPlaybackRateHtml(7);
+                    break;
+                    default:
+                      setPlaybackRateHtml(3);
+                  } */
+                });
+              }, 100);
+              
             } 
           }
       })
@@ -302,6 +308,7 @@ function setPlaybackRate(pbr) {
   }
   
   function setPlaybackRateHtml(childNumber){
+    console.log("child number before everything" ,childNumber);
     document.getElementsByClassName('ytp-settings-button')[0].click();
     var panel = document.getElementsByClassName('ytp-popup ytp-settings-menu')[0].getElementsByClassName('ytp-menuitem-label')
     for(var i = 0 ; i < panel.length; i++){
@@ -309,8 +316,10 @@ function setPlaybackRate(pbr) {
         setTimeout(() => {
           panel[i].click();
           setTimeout(() => {
-            document.getElementsByClassName('ytp-panel-menu')[0].children[childNumber].click();
-            console.log(childNumber);
+            console.log("child number" ,childNumber);
+            let child = document.getElementsByClassName('ytp-panel-menu')[0].children[childNumber];
+            child.click()
+            
             setTimeout(() => {
               document.getElementsByClassName('ytp-settings-button')[0].click();
             }, 1000);
@@ -326,14 +335,14 @@ function setPlaybackRate(pbr) {
   }
 
   function newVideoSelectPlaybakeRate(){
-    var target2 = document.getElementById("channel-name");
-    var observerNewSelect = new MutationObserver(onMutate);
-    observerNewSelect.observe(target2 , { childList: true, subtree: true});
+    var targetPbr = document.getElementById("channel-name");
+    var observerNewSelectPbr = new MutationObserver(onMutate);
+    observerNewSelectPbr.observe(targetPbr , { childList: true, subtree: true});
     function onMutate(mutationsList) {
       mutationsList.forEach(mutation => {
 
         if(document.getElementById("channel-name").getElementsByTagName('a')[0].innerText) {
-          channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
+          let channelName = document.getElementById("channel-name").getElementsByTagName('a')[0].innerText;
           var chanIsSet = {"chanIsSet": {"channel": channelName}}
           chrome.runtime.sendMessage(chanIsSet,function(response){
             if (response === false) {
@@ -342,9 +351,10 @@ function setPlaybackRate(pbr) {
             }
           })
             var chanToGet = {"getPlaybackRate": {"channel": channelName}}
-          chrome.runtime.sendMessage(chanToGet,function(response){
+          chrome.runtime.sendMessage(chanToGet,(response)=>{
             document.getElementsByTagName('video')[0].playbackRate = response;
-            switch (response){
+            console.log("response Pbr", response);
+            /* switch (response){
                 case 0.25:
                   setPlaybackRateHtml(0);
                 break;
@@ -369,10 +379,22 @@ function setPlaybackRate(pbr) {
                 case 2:
                   setPlaybackRateHtml(7);
                 break;
-              }
+                default:
+                  setPlaybackRateHtml(3);
+              } */
           });
         }
       })
     }
   }
-};
+}
+
+function videoChangingOnSamePage(){
+  var videoTarget = document.getElementsByTagName("video");
+  var videoObserver = new MutationObserver(videoMutate);
+  videoObserver.observe(videoTarget , { childList: true, subtree: true});
+  function videoMutate(){
+    console.log("video mutate");
+    setPlaybackRate();
+  }
+}
